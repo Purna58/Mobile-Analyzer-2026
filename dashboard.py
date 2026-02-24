@@ -153,7 +153,8 @@ elif page == "Phone Finder":
     if query:
         # Search across all columns for maximum flexibility
         search_mask = display_df.apply(lambda row: row.astype(str).str.contains(query, case=False).any(), axis=1)
-        st.dataframe(display_df[search_mask], use_container_width=True)
+        st.dataframe(display_df[search_mask], use_container_width=True, hide_index=True)
     else:
         # Hides full data to prevent unauthorized scraping
         st.info("The database is secured. Please enter a keyword in the search box above to view details.")
+
