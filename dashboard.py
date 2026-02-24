@@ -43,12 +43,12 @@ st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to:", ["Market Overview", "Specs Analytics", "Phone Finder"])
 
 COLORS = px.colors.qualitative.Prism
+
 # PAGE 1: MARKET OVERVIEW
 if page == "Market Overview":
     st.title("Market Overview")
     st.markdown("A comprehensive analysis of brand dominance and quality.")
     
-    # Logic to pick actual market leader (Volume)
     brand_counts = df['Brand'].value_counts()
     if len(brand_counts) > 1 and brand_counts.index[0] == 'Missing Data':
         v_leader, v_val = brand_counts.index[1], brand_counts.values[1]
@@ -56,15 +56,13 @@ if page == "Market Overview":
         v_leader = brand_counts.index[0] if not brand_counts.empty else "N/A"
         v_val = brand_counts.values[0] if not brand_counts.empty else 0
 
-    # Brand quality analysis (Filtering missing data)
     clean_df = df[~df['Brand'].isin(['Missing Data', 'N/A', 'Unknown'])]
     brand_stats = clean_df.groupby('Brand').agg({'Overall_Rating': 'mean', 'Phone_Name': 'count'})
-    top_brands = brand_stats[brand_stats['Phone_Name'] >= 3] # Minimum 3 models for quality lead
+    top_brands = brand_stats[brand_stats['Phone_Name'] >= 3]
     
     q_leader = top_brands['Overall_Rating'].idxmax() if not top_brands.empty else v_leader
     q_val = top_brands['Overall_Rating'].max() if not top_brands.empty else 0
 
-    # KPI Metrics
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total Devices", len(df))
     m2.metric("Avg Price", f"{int(df[df['Price_Clean']>0]['Price_Clean'].mean()):,} BDT")
@@ -110,13 +108,11 @@ elif page == "Specs Analytics":
 elif page == "Phone Finder":
     st.title("Smart Finder")
     
-    # Prepare display data
     display_df = df.copy()
     display_df['Price_Display'] = display_df['Price_Clean'].apply(
         lambda x: "Coming Soon" if x == 0 else f"{int(x):,} BDT"
     )
 
-    # Filter Form
     with st.form("finder_form"):
         sc1, sc2, sc3 = st.columns(3)
         budget = sc1.number_input("Max Budget (0 for Coming Soon):", value=50000)
@@ -145,16 +141,18 @@ elif page == "Phone Finder":
         else:
             st.warning("No matches found for the selected criteria.")
 
-    # Secure Search Section
     st.divider()
     st.subheader("Secure Database Search")
     query = st.text_input("Enter phone name or any feature (e.g. 5G, OLED, 108MP):")
     
     if query:
-        # Search across all columns for maximum flexibility
         search_mask = display_df.apply(lambda row: row.astype(str).str.contains(query, case=False).any(), axis=1)
-        st.dataframe(display_df[search_mask], use_container_width=True, hide_index=True)
+        search_results = display_df[search_mask].head(10)
+        
+        if not search_results.empty:
+            st.write(f"Showing top {len(search_results)} matching results:")
+            st.dataframe(search_results, use_container_width=True, hide_index=True)
+        else:
+            st.warning("No specific matches found for your search.")
     else:
-        # Hides full data to prevent unauthorized scraping
         st.info("The database is secured. Please enter a keyword in the search box above to view details.")
-
